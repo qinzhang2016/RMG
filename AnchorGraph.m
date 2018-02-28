@@ -1,8 +1,9 @@
-function [Z, rL] = AnchorGraph(TrainData, Anchor, s, flag, cn)
+function [Z, rL] = AnchorGraph(TrainData, Anchor, s, cn)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % 
 % AnchorGraph
 % Written by Wei Liu (wliu@ee.columbia.edu)
+% Modified by Qin Zhang (zhang_qin1005@163.com)
 % TrainData(dXn): input data matrix, d: dimension, n: # samples
 % Anchor(dXm): anchor matrix, m: # anchors 
 % s: # of closest anchors, usually set to 2-10 
@@ -13,7 +14,7 @@ function [Z, rL] = AnchorGraph(TrainData, Anchor, s, flag, cn)
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-[d,m] = size(Anchor);
+[~,m] = size(Anchor);
 n = size(TrainData,2);
 Z = zeros(n,m);
 
@@ -29,30 +30,15 @@ clear Dis;
 clear tep;
 ind = (pos-1)*n+repmat([1:n]',1,s);
 
-if flag == 0
-   %% kernel-defined weights
-    %% adaptive kernel width I used in ICML'10
-    % val = val./repmat(val(:,s),1,s);  
-    % val = exp(-val);
-    %% unified kernel width that could be better
-    sigma = mean(val(:,s).^0.5);
-    val = exp(-val/(1/1*sigma^2));
-    
-    val = repmat(sum(val,2).^-1,1,s).*val;  
-else
-   %% LAE-optimized weights 
-    for i = 1:n
-        x = TrainData(:,i); 
-        x = x/norm(x,2);
-        U = Anchor(:,pos(i,:));  
-        U = U*diag(sum(U.^2).^-0.5);
-        val(i,:) = LAE(x,U,cn);
-    end
-    clear x;
-    clear U;
-end
+%% kernel-defined weights
+%% unified kernel width
+sigma = mean(val(:,s).^0.5);
+val = exp(-val/(1/1*sigma^2));
 
-Z([ind]) = [val];
+val = repmat(sum(val,2).^-1,1,s).*val;  
+
+
+Z(ind) = val;
 Z = sparse(Z);
 clear val;
 clear pos;
